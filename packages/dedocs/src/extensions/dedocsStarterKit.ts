@@ -25,6 +25,8 @@
  * composes them.
  */
 
+import Heading from '@tiptap/extension-heading';
+
 import BulletLists from './bullet-lists';
 import { PageBreak } from './page-break';
 import { PageSetup } from './page-setup';
@@ -69,6 +71,7 @@ export {
  * consumers.
  */
 export const dedocsStarterKit: ReadonlyArray<unknown> = Object.freeze([
+  Heading.configure({ levels: [1, 2, 3] }),
   PageSetup,
   PageBreak,
   Pagination,

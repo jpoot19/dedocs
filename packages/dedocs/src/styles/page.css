@@ -1,10 +1,24 @@
 /**
  * dedocs page-frame and print styles.
  *
- * Page frames are absolutely positioned containers inside a scrollable
- * canvas. Dimensions come from CSS custom properties emitted by the
- * `PageSetup` extension, so the same variables drive both the on-screen
- * frames and the `@page` print rules.
+ * Layout model:
+ *
+ *   .dedocs-canvas (position: relative, scrollable, gray background)
+ *     ├── .ProseMirror.dedocs-editor  ← the REAL, flowing page surface.
+ *     │                                  It takes the full paper width,
+ *     │                                  respects the configured margins
+ *     │                                  via inner padding, and shows a
+ *     │                                  single white sheet with shadow.
+ *     └── .dedocs-page × N             ← decorative ghosts behind the
+ *                                        editor. Each one is positioned
+ *                                        absolutely to mark a page break
+ *                                        so users see N page boundaries
+ *                                        even when the document content
+ *                                        is shorter than N pages.
+ *
+ * Dimensions come from CSS custom properties emitted by the `PageSetup`
+ * extension, so the same variables drive both the on-screen frames and the
+ * `@page` print rules.
  *
  * Variable defaults match `DEFAULT_PAGE_SETUP` in `../types.ts`
  * (A4 portrait, 2.54 cm margins). The `PageSetup` extension overrides these
@@ -22,7 +36,8 @@
 }
 
 /**
- * Scrollable canvas that hosts the absolutely-positioned page frames.
+ * Scrollable canvas that hosts the flowing editor surface and the absolutely-
+ * positioned page frame ghosts.
  */
 .dedocs-canvas {
   position: relative;
@@ -34,23 +49,129 @@
 }
 
 /**
- * Single page frame. Padding is sourced from the page-setup CSS variables so
- * the content box shrinks automatically when margins change.
+ * Real, flowing page surface. The Tiptap editor DOM (.ProseMirror with the
+ * `dedocs-editor` class injected by `createDedocsEditor`) is mounted inside
+ * the canvas via `<EditorContent>`, which in Tiptap 3.x wraps the editor
+ * inside an extra `<div>` — so we use a descendant selector, not a child
+ * combinator, to reach the actual `.ProseMirror` element.
  */
-.dedocs-page {
+
+/**
+ * Flatten the `<EditorContent>` wrapper. Tiptap 3.x renders the editor
+ * inside an intermediate `<div>` (see `editorContentRef`). With
+ * `display: contents` that wrapper is invisible to layout, so the
+ * `.ProseMirror` lays out as a direct child of `.dedocs-canvas`.
+ */
+.dedocs-canvas > div:not(.dedocs-page) {
+  display: contents;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor {
   position: relative;
+  z-index: 1;
+  box-sizing: border-box;
   width: var(--page-width);
   min-height: var(--page-height);
+  margin: 0 auto;
+  padding: var(--page-margin-top) var(--page-margin-right)
+    var(--page-margin-bottom) var(--page-margin-left);
+  background: #ffffff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+  outline: none;
+}
+
+/**
+ * Typography inside the editor surface. Tiptap does not ship default
+ * styles for block nodes — without these, every heading renders at the
+ * body size and the document looks "compressed" with no visible hierarchy.
+ */
+.dedocs-canvas .ProseMirror.dedocs-editor {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  color: #111827;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor > * + * {
+  margin-top: 0.5em;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor h1 {
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0.67em 0;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor h2 {
+  font-size: 1.5em;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0.83em 0;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor h3 {
+  font-size: 1.17em;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1em 0;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor p {
+  margin: 0;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor ul,
+.dedocs-canvas .ProseMirror.dedocs-editor ol {
+  margin: 0.5em 0;
+  padding-left: 2em;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor li {
+  margin: 0.25em 0;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor li > p {
+  margin: 0;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor hr {
+  border: none;
+  border-top: 1px dashed #94a3b8;
+  margin: 8px 0;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor s {
+  text-decoration: line-through;
+}
+
+.dedocs-canvas .ProseMirror.dedocs-editor u {
+  text-decoration: underline;
+}
+
+/**
+ * Decorative page frame. Rendered absolutely behind the editor DOM so the
+ * editor (the real content) stays interactive. When the editor content is
+ * shorter than `pageCount` pages, the trailing frames remain visible below
+ * it; when the editor content fills them, the editor grows over them.
+ */
+.dedocs-page {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--page-width);
   height: var(--page-height);
   padding: var(--page-margin-top) var(--page-margin-right)
     var(--page-margin-bottom) var(--page-margin-left);
-  margin: 0 auto 16px;
+  margin: 0;
   background: #ffffff;
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.08),
     0 1px 2px rgba(0, 0, 0, 0.06);
   box-sizing: border-box;
-  overflow: hidden;
+  pointer-events: none;
   page-break-after: always;
   break-after: page;
 }
@@ -103,8 +224,13 @@
     overflow: visible;
   }
 
+  /* Hide the decorative frame ghosts in print — only the real content
+     should print, the @page rule supplies the paper size. */
   .dedocs-page {
-    margin: 0;
+    display: none;
+  }
+
+  .dedocs-canvas .ProseMirror.dedocs-editor {
     box-shadow: none;
   }
 
