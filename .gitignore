@@ -23,6 +23,14 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# pnpm workspace lockfiles
+packages/*/pnpm-lock.yaml
+packages/*/package-lock.json
+packages/*/pnpm-workspace.yaml
+
+# e2e tests
+packages/*/e2e/
+
 # Test
 coverage/
 
@@ -30,3 +38,6 @@ coverage/
 .env
 .env.local
 .env.*.local
+
+# OpenCode / Atl
+.atl/
