@@ -1,0 +1,130 @@
+/**
+ * dedocs page-frame and print styles.
+ *
+ * Page frames are absolutely positioned containers inside a scrollable
+ * canvas. Dimensions come from CSS custom properties emitted by the
+ * `PageSetup` extension, so the same variables drive both the on-screen
+ * frames and the `@page` print rules.
+ *
+ * Variable defaults match `DEFAULT_PAGE_SETUP` in `../types.ts`
+ * (A4 portrait, 2.54 cm margins). The `PageSetup` extension overrides these
+ * at runtime whenever the user changes paper size, orientation, or margins.
+ */
+
+:root,
+.dedocs-editor {
+  --page-width: 210mm;
+  --page-height: 297mm;
+  --page-margin-top: 2.54cm;
+  --page-margin-right: 2.54cm;
+  --page-margin-bottom: 2.54cm;
+  --page-margin-left: 2.54cm;
+}
+
+/**
+ * Scrollable canvas that hosts the absolutely-positioned page frames.
+ */
+.dedocs-canvas {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 0;
+  background: #f3f4f6;
+  overflow: auto;
+}
+
+/**
+ * Single page frame. Padding is sourced from the page-setup CSS variables so
+ * the content box shrinks automatically when margins change.
+ */
+.dedocs-page {
+  position: relative;
+  width: var(--page-width);
+  min-height: var(--page-height);
+  height: var(--page-height);
+  padding: var(--page-margin-top) var(--page-margin-right)
+    var(--page-margin-bottom) var(--page-margin-left);
+  margin: 0 auto 16px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+}
+
+.dedocs-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+/**
+ * Explicit page-break marker rendered inline between paragraphs. The actual
+ * node is `<hr data-page-break>`; this class styles that node and its
+ * widget decoration.
+ */
+.dedocs-page-break {
+  display: block;
+  width: 100%;
+  border: none;
+  border-top: 1px dashed #94a3b8;
+  margin: 8px 0;
+  height: 0;
+  background: transparent;
+  cursor: default;
+  page-break-after: always;
+  break-after: page;
+}
+
+.dedocs-page-break::before {
+  content: 'Page break';
+  display: block;
+  position: relative;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 8px;
+  font-size: 11px;
+  color: #64748b;
+  background: #ffffff;
+  width: max-content;
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .dedocs-canvas {
+    background: transparent;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .dedocs-page {
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .dedocs-page-break::before {
+    /* Hide the label in print output; keep only the dashed rule. */
+    content: none;
+  }
+}
+
+/**
+ * Print page size and margins.
+ *
+ * Note: CSS custom properties are not universally supported inside `@page`
+ * rules across all browsers. Chromium honours them when declared via
+ * `@property` with `inherits: true`. If a target browser refuses to resolve
+ * the variables, the `PageSetup` extension emits a literal `@page` rule
+ * instead.
+ */
+@page {
+  size: var(--page-width) var(--page-height);
+  margin: var(--page-margin-top) var(--page-margin-right)
+    var(--page-margin-bottom) var(--page-margin-left);
+}

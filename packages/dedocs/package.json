@@ -1,0 +1,75 @@
+{
+  "name": "dedocs",
+  "version": "0.1.0",
+  "description": "MIT-licensed React paged document editor on top of Tiptap OSS.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./engine": {
+      "types": "./dist/editor/engine.d.ts",
+      "import": "./dist/editor/engine.js",
+      "require": "./dist/editor/engine.cjs"
+    },
+    "./styles/page.css": "./src/styles/page.css"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@tiptap/core": "^3.29.0",
+    "@tiptap/pm": "^3.29.0",
+    "@tiptap/react": "^3.29.0",
+    "@tiptap/extension-document": "^3.29.0",
+    "@tiptap/extension-paragraph": "^3.29.0",
+    "@tiptap/extension-text": "^3.29.0",
+    "@tiptap/extension-text-style": "^3.29.0",
+    "@tiptap/extension-font-family": "^3.29.0",
+    "@tiptap/extension-color": "^3.29.0",
+    "@tiptap/extension-bold": "^3.29.0",
+    "@tiptap/extension-italic": "^3.29.0",
+    "@tiptap/extension-strike": "^3.29.0",
+    "@tiptap/extension-underline": "^3.29.0",
+    "@tiptap/extension-text-align": "^3.29.0",
+    "@tiptap/extension-bullet-list": "^3.29.0",
+    "@tiptap/extension-list-item": "^3.29.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@playwright/test": "^1.45.0",
+    "happy-dom": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "resize-observer-polyfill": "^1.5.1",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}
