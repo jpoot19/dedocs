@@ -28,7 +28,7 @@ import {
   type ReactNode,
   type ReactElement,
 } from 'react';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { useEditor } from '@tiptap/react';
 
 import { createDedocsEditor } from '../../editor/createDedocsEditor';
 import {
@@ -72,6 +72,8 @@ const EMPTY_PAGINATION_STATE: PaginationState = Object.freeze({
   pageCount: 1,
   pageWidth: 0,
   pageHeight: 0,
+  outerWidth: 0,
+  outerHeight: 0,
 }) as PaginationState;
 
 export function DocumentEditorRoot(props: DocumentEditorRootProps): ReactElement {
@@ -122,6 +124,8 @@ export function DocumentEditorRoot(props: DocumentEditorRootProps): ReactElement
         pageCount: next.pageCount,
         pageWidth: next.pageWidth,
         pageHeight: next.pageHeight,
+        outerWidth: next.outerWidth,
+        outerHeight: next.outerHeight,
       });
     };
     handleUpdate();
@@ -157,7 +161,6 @@ export function DocumentEditorRoot(props: DocumentEditorRootProps): ReactElement
     <DocumentEditorContext.Provider value={contextValue}>
       <div ref={containerRef} className={className ?? 'dedocs-root'}>
         {children}
-        <EditorContent editor={editor} />
       </div>
     </DocumentEditorContext.Provider>
   );

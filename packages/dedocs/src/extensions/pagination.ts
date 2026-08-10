@@ -65,6 +65,8 @@ export interface PaginationPluginState {
   pageCount: number;
   pageWidth: number;
   pageHeight: number;
+  outerWidth: number;
+  outerHeight: number;
 }
 
 export interface PaginationResolvedMetrics {
@@ -301,6 +303,8 @@ function emptyState(metrics: PaginationResolvedMetrics): PaginationPluginState {
     pageCount: 1,
     pageWidth: metrics.contentWidth,
     pageHeight: metrics.contentHeight,
+    outerWidth: metrics.outerWidth,
+    outerHeight: metrics.outerHeight,
   };
 }
 
@@ -496,6 +500,8 @@ function measureAndDecorate(
     pageCount,
     pageWidth: metrics.contentWidth,
     pageHeight: metrics.contentHeight,
+    outerWidth: metrics.outerWidth,
+    outerHeight: metrics.outerHeight,
   };
 }
 
@@ -512,6 +518,8 @@ export function getPaginationState(view: EditorView): PaginationState {
       pageCount: 1,
       pageWidth: m.contentWidth,
       pageHeight: m.contentHeight,
+      outerWidth: m.outerWidth,
+      outerHeight: m.outerHeight,
     };
   }
   return {
@@ -519,6 +527,8 @@ export function getPaginationState(view: EditorView): PaginationState {
     pageCount: pluginState.pageCount,
     pageWidth: pluginState.pageWidth,
     pageHeight: pluginState.pageHeight,
+    outerWidth: pluginState.outerWidth,
+    outerHeight: pluginState.outerHeight,
   };
 }
 

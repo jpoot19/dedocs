@@ -95,6 +95,10 @@ export interface PaginationState {
   pageWidth: number;
   /** Content area height in pixels (page height minus vertical margins). */
   pageHeight: number;
+  /** Page outer width in pixels (full paper width, including margins). */
+  outerWidth: number;
+  /** Page outer height in pixels (full paper height, including margins). */
+  outerHeight: number;
 }
 
 /**
