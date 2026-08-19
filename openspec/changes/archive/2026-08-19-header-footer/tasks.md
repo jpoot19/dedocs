@@ -77,7 +77,7 @@ Chain strategy: stacked-to-main|feature-branch-chain|size-exception|pending
 ## Phase 8: Testing
 
 - [x] 8.1 Unit test `clampBandHeight`: value < max passes, value > max clamps, negative clamps to 0 in `extensions/header-footer.test.ts`
-- [x] 8.2 Unit test `getDefaultBandHeightCm(297)` returns ~1.485cm; fallback returns 1.25cm in `utils/paperSizes.test.ts`
+- [x] 8.2 Unit test `getDefaultBandHeightCm(297)` returns ~5.94cm; fallback returns 1.25cm in `utils/paperSizes.test.ts`
 - [x] 8.3 Unit test `validateBandHeight(120, 297, 'header')` returns errors + clamped value; valid value returns no errors in `extensions/page-setup.test.ts`
 - [x] 8.4 Unit test `resolveMetrics` subtracts band heights from `contentHeight` in `extensions/pagination.test.ts`
 - [x] 8.5 Unit test `collectTopLevelBlocks` excludes `dedocs-band` group nodes in `extensions/pagination.test.ts`

@@ -2,3 +2,5 @@ packages:
   - 'packages/*'
   - 'playground/*'
   - '../dedocs-example'
+allowBuilds:
+  esbuild: true

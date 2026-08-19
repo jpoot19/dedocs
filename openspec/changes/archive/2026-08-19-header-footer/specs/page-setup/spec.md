@@ -1,58 +1,11 @@
-# Page Setup Specification
+# Delta for page-setup
 
-## Purpose
-
-Declare paper size, orientation, and margins per document. Emits CSS custom properties consumed by page frame rendering.
-
-## Requirements
-
-### Requirement: Paper Size Configuration
-
-The system SHALL accept paper size identifiers (A4, Letter, Legal, A5) with band height options. Default band heights are computed as `pageHeight / 5` and MUST NOT exceed `pageHeight / 3` per band independently.
-
-### Requirement: Orientation Support
-
-The system SHALL support portrait and landscape orientations, swapping width and height values.
-
-### Requirement: Margin Configuration
-
-The system SHALL accept margin values (top, right, bottom, left) in centimeters and SHALL emit them as CSS custom properties.
-
-### Requirement: Band Height Default and Max Constraints
-
-The system SHALL default each band to `pageHeight / 5` (~20% of page height). Each band SHALL be independently clamped to `pageHeight / 3` (~33%) via `clampBandHeight(value, pageHeight)`. No cross-validation between header and footer SHALL occur.
-
-### Requirement: Validation Function
-
-The system SHALL provide `validateBandHeight(value, pageHeight, label)` which returns `{ value: number; errors: string[] }`. This function is called per band during `PageSetup.onCreate` and `setPageSetup`. Errors are stored in `PageSetupStorage.errors` and emitted via `console.warn`.
-
-### Requirement: PageSetupStorage Errors Array
-
-The system SHALL store validation errors in `PageSetupStorage.errors` as an array of strings. Each entry SHALL describe which band violated the constraint and by how much.
+## MODIFIED Requirements
 
 ### Requirement: CSS Custom Property Emission
 
 The system SHALL emit CSS custom properties `--page-width`, `--page-height`, `--page-margin-top`, `--page-margin-right`, `--page-margin-bottom`, `--page-margin-left`, `--header-height`, and `--footer-height` on the editor container.
-
-## Scenarios
-
-#### Scenario: A4 portrait defaults
-
-- GIVEN page-setup with no explicit configuration
-- WHEN the editor initializes
-- THEN CSS custom properties reflect A4 portrait (210mm × 297mm) with 2.54cm margins
-
-#### Scenario: Letter landscape configuration
-
-- GIVEN page-setup configured for Letter landscape
-- WHEN the editor initializes
-- THEN `--page-width` = 279.4mm and `--page-height` = 215.9mm
-
-#### Scenario: Custom margins applied
-
-- GIVEN page-setup with top=3cm, bottom=2cm, left=2.5cm, right=2.5cm
-- WHEN the editor initializes
-- THEN each margin CSS property reflects the configured value
+(Previously: Only page dimension and margin properties were emitted)
 
 #### Scenario: Band height vars emitted
 
@@ -61,12 +14,29 @@ The system SHALL emit CSS custom properties `--page-width`, `--page-height`, `--
 - THEN `--header-height` and `--footer-height` are present on the editor container
 - AND values reflect `pageHeight / 5` (≈59.4mm for A4)
 
+### Requirement: Paper Size Configuration
+
+The system SHALL accept paper size identifiers (A4, Letter, Legal, A5) with band height options. Default band heights are computed as `pageHeight / 5` and MUST NOT exceed `pageHeight / 3` per band independently.
+(Previously: Paper size only affected page dimensions and margins; no band height defaults)
+
 #### Scenario: A4 with default band heights
 
 - GIVEN page-setup configured for A4 with no explicit band heights
 - WHEN the editor initializes
 - THEN `--header-height` ≈ 59.4mm and `--footer-height` ≈ 59.4mm (both pageHeight / 5)
 - AND each band is independently capped at pageHeight / 3 ≈ 99mm
+
+#### Scenario: A4 with explicit band heights
+
+- GIVEN page-setup configured for A4 with headerHeight=2cm, footerHeight=1.5cm
+- WHEN the editor initializes
+- THEN `--header-height` = 20mm and `--footer-height` = 15mm
+- AND body content area is reduced by both bands
+
+### Requirement: Band Height Default and Max Constraints
+
+The system SHALL default each band to `pageHeight / 5` (~20% of page height). Each band SHALL be independently clamped to `pageHeight / 3` (~33%) via `clampBandHeight(value, pageHeight)`. No cross-validation between header and footer SHALL occur.
+(Previously: Default was 1.25cm fixed; max was 50% of page height with cross-validation)
 
 #### Scenario: Default computed from page height
 
@@ -89,6 +59,11 @@ The system SHALL emit CSS custom properties `--page-width`, `--page-height`, `--
 - THEN `DEFAULT_BAND_HEIGHT_CM = 1.25` is returned
 - AND this is used as the absolute fallback for both bands
 
+### Requirement: Validation Function
+
+The system SHALL provide `validateBandHeight(value, pageHeight, label)` which returns `{ value: number; errors: string[] }`. This function is called per band during `PageSetup.onCreate` and `setPageSetup`. Errors are stored in `PageSetupStorage.errors` and emitted via `console.warn`.
+(Previously: No per-band validation function existed)
+
 #### Scenario: Validation returns error when exceeding max
 
 - GIVEN page-setup with headerHeight=120mm on A4 (max ≈ 99mm)
@@ -110,6 +85,11 @@ The system SHALL emit CSS custom properties `--page-width`, `--page-height`, `--
 - THEN header validation passes (20mm < 99mm)
 - AND footer validation returns an error (120mm > 99mm, clamped to 99mm)
 - AND each band's result is independent of the other
+
+### Requirement: PageSetupStorage Errors Array
+
+The system SHALL store validation errors in `PageSetupStorage.errors` as an array of strings. Each entry SHALL describe which band violated the constraint and by how much.
+(Previously: No errors array in storage)
 
 #### Scenario: Errors stored on validation failure
 
