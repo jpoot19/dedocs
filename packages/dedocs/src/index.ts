@@ -58,12 +58,26 @@ export {
 } from './utils/paperSizes';
 
 // --- Band validation helpers ---------------------------------------------
+// Paper-size-aware variants live in `utils/bandValidation.ts`. The
+// design.md `clampBandHeight(value, pageHeightMm)` /
+// `validateBandHeight(value, pageHeightMm, label)` helpers live in
+// `extensions/page-setup.ts` and are re-exported below under the same
+// public names.
 export {
-  clampBandHeight,
+  clampBandHeightToMax,
   getBandDefaultCm,
   getBandMaxCm,
-  validateBandHeight,
+  validateBandHeightForPaper,
 } from './utils/bandValidation';
+export {
+  clampBandHeight,
+  validateBandHeight,
+  validateBandOptions,
+  maxBandHeightCmFor,
+  mergePageSetup,
+  applyPageSetupCssVars,
+  resolvePageSetupCssVars,
+} from './extensions/page-setup';
 
 // --- Engine extensions (Phase 2) ----------------------------------------
 export * from './extensions/dedocsStarterKit';

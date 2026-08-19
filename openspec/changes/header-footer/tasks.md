@@ -39,18 +39,18 @@ Chain strategy: stacked-to-main|feature-branch-chain|size-exception|pending
 
 ## Phase 3: Pagination Skip + Metrics
 
-- [ ] 3.1 Modify `packages/dedocs/src/extensions/pagination.ts`: update `resolveMetrics` to subtract `(headerHeight + footerHeight) * MM_PER_CM * pxPerMm` from `contentHeight`
-- [ ] 3.2 Modify `collectTopLevelBlocks` in `pagination.ts`: filter out nodes where `type.spec.group === 'dedocs-band'` using `isBandNode`
-- [ ] 3.3 Update `readCssVarsKey` and `readPageSetupFromDom` in `pagination.ts` to read `--header-height` and `--footer-height` CSS vars; extend memo key
+- [x] 3.1 Modify `packages/dedocs/src/extensions/pagination.ts`: update `resolveMetrics` to subtract `(headerHeight + footerHeight) * MM_PER_CM * pxPerMm` from `contentHeight`
+- [x] 3.2 Modify `collectTopLevelBlocks` in `pagination.ts`: filter out nodes where `type.spec.group === 'dedocs-band'` using `isBandNode`
+- [x] 3.3 Update `readCssVarsKey` and `readPageSetupFromDom` in `pagination.ts` to read `--header-height` and `--footer-height` CSS vars; extend memo key
 
 ## Phase 4: PageSetup Band Integration
 
-- [ ] 4.1 Add `validateBandHeight(value, pageHeight, label): { value: number; errors: string[] }` helper to `packages/dedocs/src/extensions/page-setup.ts`
-- [ ] 4.2 Add `clampBandHeight(value, pageHeight): number` helper to `page-setup.ts` (min of value and `pageHeight / 3`)
-- [ ] 4.3 Modify `resolvePageSetupCssVars` in `page-setup.ts` to emit `--header-height` and `--footer-height` from `PageSetupOptions`
-- [ ] 4.4 Modify `mergePageSetup` in `page-setup.ts` to compute default `headerHeight`/`footerHeight` via `getDefaultBandHeightCm(pageHeightMm)`
-- [ ] 4.5 Add `errors: string[]` to `PageSetupStorage` interface; call `validateBandHeight` per band in `onCreate` and `setPageSetup` command; emit `console.warn` on errors
-- [ ] 4.6 Re-export `clampBandHeight`, `validateBandHeight`, `getDefaultBandHeightCm` from `page-setup.ts`
+- [x] 4.1 Add `validateBandHeight(value, pageHeight, label): { value: number; errors: string[] }` helper to `packages/dedocs/src/extensions/page-setup.ts`
+- [x] 4.2 Add `clampBandHeight(value, pageHeight): number` helper to `page-setup.ts` (min of value and `pageHeight / 3`)
+- [x] 4.3 Modify `resolvePageSetupCssVars` in `page-setup.ts` to emit `--header-height` and `--footer-height` from `PageSetupOptions`
+- [x] 4.4 Modify `mergePageSetup` in `page-setup.ts` to compute default `headerHeight`/`footerHeight` via `getDefaultBandHeightCm(pageHeightMm)`
+- [x] 4.5 Add `errors: string[]` to `PageSetupStorage` interface; call `validateBandHeight` per band in `onCreate` and `setPageSetup` command; emit `console.warn` on errors
+- [x] 4.6 Re-export `clampBandHeight`, `validateBandHeight`, `getDefaultBandHeightCm` from `page-setup.ts`
 
 ## Phase 5: React Slot Components
 

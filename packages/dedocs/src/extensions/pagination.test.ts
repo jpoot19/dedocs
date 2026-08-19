@@ -13,6 +13,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  BAND_GROUP,
+} from '../extensions/header-footer';
+import {
+  collectTopLevelBlocks,
   computeBreaks,
   resolveMetrics,
   SCREEN_PX_PER_MM,
@@ -37,8 +41,8 @@ describe('extensions/pagination', () => {
         paperSize: 'A4',
         orientation: 'portrait',
         margins: { top: 1, right: 1, bottom: 1, left: 1 },
-        headerHeight: 5.94,
-        footerHeight: 5.94,
+        headerHeight: 0,
+        footerHeight: 0,
       });
       // 1 cm = 10 mm; margins on each side.
       const horizontalMarginPx = 2 * 10 * SCREEN_PX_PER_MM;
@@ -47,7 +51,57 @@ describe('extensions/pagination', () => {
       expect(metrics.contentHeight).toBeCloseTo(metrics.outerHeight - verticalMarginPx, 5);
     });
 
-    it('clamps content dimensions to zero when margins exceed paper size', () => {
+    it('subtracts combined band heights from the content area', () => {
+      const metrics = resolveMetrics({
+        paperSize: 'A4',
+        orientation: 'portrait',
+        margins: { top: 0, right: 0, bottom: 0, left: 0 },
+        headerHeight: 2, // cm
+        footerHeight: 3, // cm
+      });
+      // 5 cm total bands × 10 mm/cm = 50 mm × pxPerMm
+      const bandsPx = 5 * 10 * SCREEN_PX_PER_MM;
+      // No margins here, so contentHeight = outerHeight - bands.
+      expect(metrics.contentHeight).toBeCloseTo(
+        metrics.outerHeight - bandsPx,
+        5,
+      );
+      // Spec scenario: A4 with 20mm header + 20mm footer + 20mm margins →
+      // contentHeight reduction = 40mm of bands (without the margins).
+      const specScenario = resolveMetrics({
+        paperSize: 'A4',
+        orientation: 'portrait',
+        margins: { top: 2, right: 2, bottom: 2, left: 2 }, // 2 cm each = 20mm
+        headerHeight: 2, // 20mm
+        footerHeight: 2, // 20mm
+      });
+      const expectedReductionPx = 4 * 10 * SCREEN_PX_PER_MM; // 40mm of bands
+      const expectedVerticalMarginPx = 4 * 10 * SCREEN_PX_PER_MM; // 40mm of margins
+      expect(specScenario.contentHeight).toBeCloseTo(
+        specScenario.outerHeight - expectedVerticalMarginPx - expectedReductionPx,
+        5,
+      );
+    });
+
+    it('treats zero band heights as no-op (backwards-compatible default)', () => {
+      const zeroBands = resolveMetrics({
+        paperSize: 'A4',
+        orientation: 'portrait',
+        margins: { top: 0, right: 0, bottom: 0, left: 0 },
+        headerHeight: 0,
+        footerHeight: 0,
+      });
+      const tallBands = resolveMetrics({
+        paperSize: 'A4',
+        orientation: 'portrait',
+        margins: { top: 0, right: 0, bottom: 0, left: 0 },
+        headerHeight: 0,
+        footerHeight: 0,
+      });
+      expect(zeroBands.contentHeight).toBe(tallBands.contentHeight);
+    });
+
+    it('clamps content dimensions to zero when margins plus bands exceed paper size', () => {
       const metrics = resolveMetrics({
         paperSize: 'A5',
         orientation: 'portrait',
@@ -181,6 +235,68 @@ describe('extensions/pagination', () => {
       expect(breaks[0]!.pos).toBe(100);
     });
   });
+
+  describe('collectTopLevelBlocks', () => {
+    /**
+     * Build a minimal mock view whose `state.doc.forEach` yields the
+     * given nodes in order and whose `nodeDOM` returns a stub element.
+     * The collector only needs those two surfaces.
+     */
+    function mockView(nodes: PMNode[]): Parameters<typeof collectTopLevelBlocks>[0] {
+      const stub = document.createElement('div');
+      const view = {
+        state: {
+          doc: {
+            forEach(cb: (node: PMNode) => void) {
+              for (const n of nodes) cb(n);
+            },
+          },
+        },
+        nodeDOM: () => stub,
+      };
+      return view as unknown as Parameters<typeof collectTopLevelBlocks>[0];
+    }
+
+    it('returns every block when no band nodes are present', () => {
+      const blockA = makeNode('paragraph', false);
+      const blockB = makeNode('heading', false);
+      const blocks = collectTopLevelBlocks(mockView([blockA, blockB]));
+      expect(blocks).toHaveLength(2);
+      expect(blocks.map((b) => b.node.type.name)).toEqual(['paragraph', 'heading']);
+    });
+
+    it('excludes nodes in the dedocs-band group', () => {
+      const header = makeBandNode('header', true);
+      const blockA = makeNode('paragraph', false);
+      const footer = makeBandNode('footer', true);
+      const blockB = makeNode('paragraph', false);
+
+      const blocks = collectTopLevelBlocks(
+        mockView([header, blockA, footer, blockB]),
+      );
+
+      // Only the two paragraphs should remain.
+      expect(blocks).toHaveLength(2);
+      expect(
+        blocks.every((b) => b.node.type.spec?.group !== BAND_GROUP),
+      ).toBe(true);
+      expect(blocks.map((b) => b.node.type.name)).toEqual(['paragraph', 'paragraph']);
+    });
+
+    it('advances position correctly when skipping band nodes', () => {
+      // Bands still consume their nodeSize from the position cursor so
+      // the offset arithmetic stays correct for downstream code.
+      const header = makeBandNode('header', true);
+      // Patch nodeSize on the casted mock object directly.
+      (header as unknown as { nodeSize: number }).nodeSize = 5;
+      const block = makeNode('paragraph', false);
+
+      const blocks = collectTopLevelBlocks(mockView([header, block]));
+      expect(blocks).toHaveLength(1);
+      // The block's pos should be 5 (header's nodeSize), not 0.
+      expect(blocks[0]!.pos).toBe(5);
+    });
+  });
 });
 
 /** Tiny stub for the ProseMirror node parameter — only `isAtom` / `isLeaf`
@@ -188,6 +304,17 @@ describe('extensions/pagination', () => {
 function makeNode(name: string, atom: boolean): PMNode {
   return {
     type: { name },
+    isAtom: atom,
+    isLeaf: atom,
+    nodeSize: 10,
+  } as PMNode;
+}
+
+/** Stub for a band-node (header / footer). Carries the `dedocs-band`
+ *  group on its `type.spec` so `isBandNode` recognises it. */
+function makeBandNode(name: string, atom: boolean): PMNode {
+  return {
+    type: { name, spec: { group: BAND_GROUP } },
     isAtom: atom,
     isLeaf: atom,
     nodeSize: 10,

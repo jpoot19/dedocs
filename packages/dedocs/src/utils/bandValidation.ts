@@ -6,15 +6,20 @@
  *
  * Two rules:
  *   1. Each band height is clamped to `pageHeight / 3` via
- *      `clampBandHeight` — silently, no exception.
- *   2. `validateBandHeight` collects human-readable error messages for
- *      any constraint violation and returns the (possibly clamped)
- *      value alongside them.
+ *      `clampBandHeightToMax` — silently, no exception.
+ *   2. `validateBandHeightForPaper` collects human-readable error
+ *      messages for any constraint violation and returns the
+ *      (possibly clamped) value alongside them.
  *
  * No cross-band validation: each band is reasoned about in isolation.
  * Since each band is capped at `pageHeight / 3`, the worst case for the
  * combined bands (`header + footer`) is `2 * pageHeight / 3`, leaving a
  * body area ≥ `pageHeight / 3` — safe by construction.
+ *
+ * Note: this module exposes paper-size-aware variants. The
+ * `extensions/page-setup.ts` module owns the simpler pageHeightMm-based
+ * `clampBandHeight(value, pageHeightMm)` / `validateBandHeight(value,
+ * pageHeightMm, label)` helpers that match the design.md contract.
  */
 
 import {
@@ -64,8 +69,12 @@ export function getBandDefaultCm(
  * through unchanged.
  *
  * Never throws.
+ *
+ * Named `clampBandHeightToMax` to make room for `extensions/page-setup.ts`'s
+ * `clampBandHeight(value, pageHeightMm)` which matches the design.md
+ * signature (operates directly on the page height in mm).
  */
-export function clampBandHeight(
+export function clampBandHeightToMax(
   value: number,
   maxCm: number,
 ): number {
@@ -86,8 +95,12 @@ export function clampBandHeight(
  *   - Value above the per-band maximum → clamped to `maxCm`, error
  *     reported describing the violation.
  *   - Value within range → passes through, no errors.
+ *
+ * Named `validateBandHeightForPaper` to disambiguate from
+ * `extensions/page-setup.ts`'s `validateBandHeight(value, pageHeightMm,
+ * label)` which matches the design.md contract.
  */
-export function validateBandHeight(
+export function validateBandHeightForPaper(
   heightCm: number,
   paperSize: PaperSize,
   orientation: Orientation,

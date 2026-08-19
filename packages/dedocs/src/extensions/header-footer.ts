@@ -55,9 +55,16 @@ export interface BandHeightAttributeOptions {
  * Helper: given a ProseMirror node, return `true` if it belongs to the
  * `dedocs-band` group. Used by `collectTopLevelBlocks` to filter band
  * nodes out of the body block list passed to the pagination engine.
+ *
+ * Defensive against missing `spec` / `group` — any node whose type does
+ * not declare `group` (or declares a different group) is treated as a
+ * body block. This keeps pagination robust against test fixtures and
+ * forward-compatible with future extensions.
  */
-export function isBandNode(node: { type: { spec: { group?: string } } }): boolean {
-  return node.type.spec.group === BAND_GROUP;
+export function isBandNode(
+  node: { type: { spec?: { group?: string } } },
+): boolean {
+  return node.type.spec?.group === BAND_GROUP;
 }
 
 declare module '@tiptap/core' {
