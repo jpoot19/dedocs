@@ -37,6 +37,8 @@ describe('extensions/pagination', () => {
         paperSize: 'A4',
         orientation: 'portrait',
         margins: { top: 1, right: 1, bottom: 1, left: 1 },
+        headerHeight: 5.94,
+        footerHeight: 5.94,
       });
       // 1 cm = 10 mm; margins on each side.
       const horizontalMarginPx = 2 * 10 * SCREEN_PX_PER_MM;
@@ -50,6 +52,8 @@ describe('extensions/pagination', () => {
         paperSize: 'A5',
         orientation: 'portrait',
         margins: { top: 100, right: 100, bottom: 100, left: 100 },
+        headerHeight: 5.94,
+        footerHeight: 5.94,
       });
       expect(metrics.contentWidth).toBe(0);
       expect(metrics.contentHeight).toBe(0);

@@ -70,6 +70,8 @@ describe('extensions/page-setup', () => {
         paperSize: 'Letter',
         orientation: 'landscape',
         margins: { top: 2, right: 2, bottom: 2, left: 2 },
+        headerHeight: 5.94,
+        footerHeight: 5.94,
       });
       expect(vars[PAGE_SETUP_CSS_VARS.width]).toBe('279.4mm');
       expect(vars[PAGE_SETUP_CSS_VARS.height]).toBe('215.9mm');
@@ -80,6 +82,8 @@ describe('extensions/page-setup', () => {
         paperSize: 'A4',
         orientation: 'portrait',
         margins: { top: 3, right: 2.5, bottom: 2, left: 2.5 },
+        headerHeight: 5.94,
+        footerHeight: 5.94,
       });
       expect(vars[PAGE_SETUP_CSS_VARS.marginTop]).toBe('3cm');
       expect(vars[PAGE_SETUP_CSS_VARS.marginRight]).toBe('2.5cm');
@@ -95,6 +99,8 @@ describe('extensions/page-setup', () => {
         paperSize: 'A4',
         orientation: 'portrait',
         margins: { top: 1, right: 1, bottom: 1, left: 1 },
+        headerHeight: 5.94,
+        footerHeight: 5.94,
       });
       expect(el.style.getPropertyValue(PAGE_SETUP_CSS_VARS.width)).toBe('210mm');
       expect(el.style.getPropertyValue(PAGE_SETUP_CSS_VARS.height)).toBe('297mm');

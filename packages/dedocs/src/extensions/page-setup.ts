@@ -20,7 +20,11 @@ import {
   PAGE_SETUP_CSS_VARS,
   type PageSetupOptions,
 } from '../types';
-import { getPaperDimensions } from '../utils/paperSizes';
+import {
+  getDefaultBandHeightCm,
+  getPaperDimensions,
+  pageHeightMm,
+} from '../utils/paperSizes';
 
 export interface PageSetupStorage {
   /** Currently applied page setup. Updated by `setPageSetup`. */
@@ -50,23 +54,51 @@ export function resolvePageSetupCssVars(options: PageSetupOptions): Record<
 /**
  * Merge a partial `PageSetupOptions` (e.g. from `createDedocsEditor({ pageSetup })`)
  * with the default. Top-level keys fall back independently; nested `margins`
- * merge with the default margins object.
+ * merge with the default margins object. Band heights default to
+ * `pageHeight / 5` (computed from the resolved paper size + orientation)
+ * when the consumer does not provide explicit values.
  */
 export function mergePageSetup(
   partial: Partial<PageSetupOptions> | undefined,
 ): PageSetupOptions {
-  if (!partial) {
-    return { ...DEFAULT_PAGE_SETUP, margins: { ...DEFAULT_PAGE_SETUP.margins } };
-  }
+  const base: PageSetupOptions = partial
+    ? {
+        paperSize: partial.paperSize ?? DEFAULT_PAGE_SETUP.paperSize,
+        orientation: partial.orientation ?? DEFAULT_PAGE_SETUP.orientation,
+        margins: {
+          top: partial.margins?.top ?? DEFAULT_PAGE_SETUP.margins.top,
+          right: partial.margins?.right ?? DEFAULT_PAGE_SETUP.margins.right,
+          bottom: partial.margins?.bottom ?? DEFAULT_PAGE_SETUP.margins.bottom,
+          left: partial.margins?.left ?? DEFAULT_PAGE_SETUP.margins.left,
+        },
+        headerHeight:
+          partial.headerHeight ?? DEFAULT_PAGE_SETUP.headerHeight,
+        footerHeight:
+          partial.footerHeight ?? DEFAULT_PAGE_SETUP.footerHeight,
+      }
+    : {
+        ...DEFAULT_PAGE_SETUP,
+        margins: { ...DEFAULT_PAGE_SETUP.margins },
+      };
+
+  // If the consumer did not supply explicit band heights, recompute the
+  // defaults from the effective page height so A4, Letter, Legal, and A5
+  // each get a page-relative 1/5 default rather than the A4 baseline.
+  const paperSize = base.paperSize;
+  const orientation = base.orientation;
+  const resolvedHeightMm = pageHeightMm(base);
+  const computedDefaultCm = getDefaultBandHeightCm(resolvedHeightMm);
+
   return {
-    paperSize: partial.paperSize ?? DEFAULT_PAGE_SETUP.paperSize,
-    orientation: partial.orientation ?? DEFAULT_PAGE_SETUP.orientation,
-    margins: {
-      top: partial.margins?.top ?? DEFAULT_PAGE_SETUP.margins.top,
-      right: partial.margins?.right ?? DEFAULT_PAGE_SETUP.margins.right,
-      bottom: partial.margins?.bottom ?? DEFAULT_PAGE_SETUP.margins.bottom,
-      left: partial.margins?.left ?? DEFAULT_PAGE_SETUP.margins.left,
-    },
+    ...base,
+    headerHeight:
+      partial?.headerHeight !== undefined
+        ? base.headerHeight
+        : computedDefaultCm,
+    footerHeight:
+      partial?.footerHeight !== undefined
+        ? base.footerHeight
+        : computedDefaultCm,
   };
 }
 
