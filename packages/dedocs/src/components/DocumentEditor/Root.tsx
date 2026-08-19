@@ -1,13 +1,20 @@
 /**
  * `<DocumentEditor.Root>` — the context provider that wires the Tiptap
- * editor instance, the current `PageSetup`, and the live pagination
- * snapshot together for every descendant component.
+ * editor instance, the current `PageSetup`, the live pagination
+ * snapshot, and the captured header/footer slot children together for
+ * every descendant component.
  *
  * Usage:
  *
  *     <DocumentEditor.Root pageSetup={opts} onUpdate={fn}>
  *       <DocumentEditor.Toolbar />
+ *       <DocumentEditor.Header>
+ *         <strong>ACME Corp</strong>
+ *       </DocumentEditor.Header>
  *       <DocumentEditor.Canvas />
+ *       <DocumentEditor.Footer>
+ *         <em>© 2026</em>
+ *       </DocumentEditor.Footer>
  *     </DocumentEditor.Root>
  *
  * The Root owns:
@@ -16,11 +23,19 @@
  *     components re-render when breaks change.
  *   - The default page-setup value used as context fallback while the
  *     editor is still mounting.
+ *   - Slot capture: a single `React.Children.forEach` traversal over
+ *     the consumer's children that identifies `<DocumentEditor.Header>`
+ *     and `<DocumentEditor.Footer>` markers (via their static
+ *     `slotType`) and lifts their children into the context as
+ *     `headerSlot` / `footerSlot` for `<DocumentEditor.Canvas>` to
+ *     portal-mount into every page frame.
  *
  * Spec: openspec/changes/dedocs-mvp/specs/editor-shell/spec.md
+ * Spec: openspec/changes/header-footer/specs/editor-shell/spec.md
  */
 
 import {
+  Children,
   useEffect,
   useMemo,
   useRef,
@@ -59,7 +74,8 @@ export interface DocumentEditorRootProps {
   onUpdate?: DedocsEditorOptions['onUpdate'];
   /** Class on the outermost `<div>` container. */
   className?: string;
-  /** Children — typically `<DocumentEditor.Toolbar />` and `<DocumentEditor.Canvas />`. */
+  /** Children — typically `<DocumentEditor.Toolbar />`, `<DocumentEditor.Canvas />`,
+   * and optional `<DocumentEditor.Header>` / `<DocumentEditor.Footer>` slot markers. */
   children?: ReactNode;
 }
 
@@ -76,6 +92,58 @@ const EMPTY_PAGINATION_STATE: PaginationState = Object.freeze({
   outerHeight: 0,
 }) as PaginationState;
 
+/**
+ * Marker type strings used by `<DocumentEditor.Header>` and
+ * `<DocumentEditor.Footer>`. Mirrors the `HEADER_SLOT_TYPE` /
+ * `FOOTER_SLOT_TYPE` exports — duplicated here as strings so the
+ * capture logic doesn't need a direct import (keeps Root lean and
+ * avoids a circular dep through the component barrel).
+ */
+const SLOT_TYPE_HEADER = 'header';
+const SLOT_TYPE_FOOTER = 'footer';
+
+/**
+ * Walk `children` and pull out the inner content of any element whose
+ * static `slotType` marker matches one of the known band roles. Order
+ * doesn't matter — if the consumer accidentally passes two headers,
+ * the last one wins (deterministic for the common case).
+ *
+ * Returns `null` for any slot that wasn't supplied so the consumer's
+ * `headerSlot === null` check is meaningful.
+ */
+function captureSlotChildren(
+  children: ReactNode,
+): { headerSlot: ReactNode; footerSlot: ReactNode } {
+  let headerSlot: ReactNode = null;
+  let footerSlot: ReactNode = null;
+
+  Children.forEach(children, (child) => {
+    if (!child) return;
+    if (typeof child !== 'object') return;
+    // `Children.forEach` yields `ReactElement | Iterable<ReactNode> |
+    // ReactPortal | Promise<...>`. Only ReactElement instances carry
+    // `.type` (the function/class reference) and `.props.children`,
+    // so we narrow the union by checking for the `type` property
+    // before reading it.
+    if (!('type' in child)) return;
+    // The marker components attach `slotType` directly to the function
+    // via `(Header as ...).slotType = 'header'`. After JSX compilation
+    // the type stays on the function reference, so we read it from
+    // there.
+    const slotType = (child.type as unknown as { slotType?: string })
+      ?.slotType;
+    if (slotType === SLOT_TYPE_HEADER) {
+      headerSlot = (child as unknown as ReactElement<{ children?: ReactNode }>)
+        .props.children;
+    } else if (slotType === SLOT_TYPE_FOOTER) {
+      footerSlot = (child as unknown as ReactElement<{ children?: ReactNode }>)
+        .props.children;
+    }
+  });
+
+  return { headerSlot, footerSlot };
+}
+
 export function DocumentEditorRoot(props: DocumentEditorRootProps): ReactElement {
   const {
     pageSetup = DEFAULT_PAGE_SETUP,
@@ -89,6 +157,13 @@ export function DocumentEditorRoot(props: DocumentEditorRootProps): ReactElement
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [paginationState, setPaginationState] =
     useState<PaginationState>(EMPTY_PAGINATION_STATE);
+
+  // Capture header/footer slot children. Memoised on `children` so
+  // unrelated parent re-renders don't re-walk the tree.
+  const { headerSlot, footerSlot } = useMemo(
+    () => captureSlotChildren(children),
+    [children],
+  );
 
   const editorOptions = useMemo(
     () =>
@@ -153,8 +228,10 @@ export function DocumentEditorRoot(props: DocumentEditorRootProps): ReactElement
       editor,
       pageSetup,
       paginationState,
+      headerSlot,
+      footerSlot,
     }),
-    [editor, pageSetup, paginationState],
+    [editor, pageSetup, paginationState, headerSlot, footerSlot],
   );
 
   return (

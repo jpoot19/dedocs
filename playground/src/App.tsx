@@ -9,6 +9,10 @@
  * Real consumers wire this into their own app shell; the playground exists
  * so we can manually verify behaviour in a browser and so Playwright e2e
  * tests have a target.
+ *
+ * Slice 3 also exercises the header / footer slot markers so the e2e
+ * tests have a real surface to assert against (band divs, portal
+ * mount, reserved space, A4→Letter swap).
  */
 
 import { DocumentEditor, PaginatedEditor } from '@dedocs';
@@ -34,8 +38,14 @@ export function App(): JSX.Element {
           console.debug('[playground] document updated', content);
         }}
       >
+        <DocumentEditor.Header>
+          <strong data-testid="playground-header">ACME Corp · Playground</strong>
+        </DocumentEditor.Header>
         <DocumentEditor.Toolbar />
         <DocumentEditor.Canvas />
+        <DocumentEditor.Footer>
+          <em data-testid="playground-footer">© 2026 — playground build</em>
+        </DocumentEditor.Footer>
       </PaginatedEditor>
     </div>
   );

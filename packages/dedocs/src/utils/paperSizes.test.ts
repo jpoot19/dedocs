@@ -28,7 +28,7 @@ import {
   pageHeightMm,
   PAPER_SIZES,
 } from '../utils/paperSizes';
-import { DEFAULT_PAGE_SETUP } from '../types';
+import { DEFAULT_BAND_HEIGHT_CM, DEFAULT_PAGE_SETUP } from '../types';
 
 describe('utils/paperSizes', () => {
   describe('PAPER_SIZES constants', () => {
@@ -114,6 +114,13 @@ describe('utils/paperSizes', () => {
     it('handles unknown / zero page heights gracefully', () => {
       expect(getDefaultBandHeightCm(0)).toBe(0);
       expect(getDefaultBandHeightCm(-1)).toBeCloseTo(-0.02, 5);
+    });
+
+    it('exposes DEFAULT_BAND_HEIGHT_CM (1.25cm) as the documented fallback', () => {
+      // The `DEFAULT_BAND_HEIGHT_CM` constant is the absolute fallback
+      // returned by paperSize-aware helpers (`getBandDefaultCm`) when
+      // page dimensions cannot be resolved. Slice 3 locks the contract.
+      expect(DEFAULT_BAND_HEIGHT_CM).toBe(1.25);
     });
   });
 

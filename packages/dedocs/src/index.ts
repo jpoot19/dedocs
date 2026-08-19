@@ -96,9 +96,13 @@ export {
   DocumentEditorRoot,
   DocumentEditorCanvas,
   DocumentEditorToolbar,
+  DocumentEditorHeader,
+  DocumentEditorFooter,
   type DocumentEditorRootProps,
   type DocumentEditorCanvasProps,
   type DocumentEditorToolbarProps,
+  type DocumentEditorHeaderProps,
+  type DocumentEditorFooterProps,
 } from './components/DocumentEditor';
 export { PaginatedEditor } from './components/PaginatedEditor';
 
