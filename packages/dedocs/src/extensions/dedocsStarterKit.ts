@@ -10,7 +10,7 @@
  *       extensions: [dedocsStarterKit, /* custom extensions *\/],
  *     });
  *
- * The six extensions:
+ * The seven extensions:
  *
  *   1. `PageSetup`       — emits CSS vars for paper size / margins
  *   2. `PageBreak`       — atomic `<hr data-page-break>` node
@@ -18,6 +18,7 @@
  *   4. `Typography`      — TextStyle / FontFamily / Color / Bold / etc.
  *   5. `ParagraphStyles` — TextAlign / LineHeight / Indent
  *   6. `BulletLists`     — BulletList / ListItem
+ *   7. `HeaderFooter`    — `header` / `footer` band nodes in `dedocs-band` group
  *
  * Extension order matters: `TextStyle` (inside `Typography`) must come
  * before FontFamily / Color; `BulletList` must come before `ListItem`.
@@ -28,6 +29,7 @@
 import Heading from '@tiptap/extension-heading';
 
 import BulletLists from './bullet-lists';
+import HeaderFooter, { BAND_GROUP, isBandNode } from './header-footer';
 import { PageBreak } from './page-break';
 import { PageSetup } from './page-setup';
 import { Pagination } from './pagination';
@@ -64,6 +66,12 @@ export {
   mergePageSetup,
   resolvePageSetupCssVars,
 } from './page-setup';
+export {
+  BAND_GROUP,
+  HeaderFooter,
+  isBandNode,
+  DEFAULT_BAND_HEIGHT_CM as HEADER_FOOTER_DEFAULT_BAND_HEIGHT_CM,
+} from './header-footer';
 
 /**
  * The flat extension array. Spread into a Tiptap `Editor`'s
@@ -75,6 +83,7 @@ export const dedocsStarterKit: ReadonlyArray<unknown> = Object.freeze([
   PageSetup,
   PageBreak,
   Pagination,
+  ...HeaderFooter,
   ...Typography,
   ...ParagraphStyles,
   ...BulletLists,

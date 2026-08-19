@@ -14,6 +14,7 @@
  * factory usable both in the React shell and in standalone scripts.
  *
  * Spec: openspec/changes/dedocs-mvp/specs/editor-shell/spec.md
+ * Spec: openspec/changes/header-footer/specs/editor-shell/spec.md
  */
 
 import Document from '@tiptap/extension-document';
@@ -28,6 +29,7 @@ import { PageSetup } from '../extensions/page-setup';
 import { Typography } from '../extensions/typography';
 import { ParagraphStyles } from '../extensions/paragraph-styles';
 import { BulletLists } from '../extensions/bullet-lists';
+import HeaderFooter from '../extensions/header-footer';
 import {
   DEFAULT_PAGE_SETUP,
   type DedocsEditorContent,
@@ -41,15 +43,25 @@ import { mergePageSetup } from '../extensions/page-setup';
  * matches `dedocsStarterKit`; explicit listing here lets `useEditor`
  * inside `DocumentEditor.Root` merge with any consumer-supplied
  * extensions without surprising order changes.
+ *
+ * `Document` is configured with an extended content schema that
+ * accepts body blocks plus the `header` / `footer` band nodes — see
+ * `header-footer.ts` for the band-node definition. The schema
+ * extension is the only schema-level wiring needed at the factory
+ * boundary; consumers who instantiate `Document` directly should
+ * mirror this content expression.
  */
 export const DEDOCS_BASE_EXTENSIONS = Object.freeze([
-  Document,
+  Document.configure({
+    content: 'block (block | header | footer)*',
+  }),
   Paragraph,
   Text,
   Heading.configure({ levels: [1, 2, 3] }),
   PageSetup,
   PageBreak,
   Pagination,
+  ...HeaderFooter,
   ...Typography,
   ...ParagraphStyles,
   ...BulletLists,

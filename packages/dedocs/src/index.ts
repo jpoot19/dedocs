@@ -21,8 +21,15 @@
 
 // --- Page setup types and defaults ---------------------------------------
 export {
+  DEFAULT_BAND_HEIGHT_CM,
+  DEFAULT_BAND_HEIGHT_FRACTION,
   DEFAULT_PAGE_SETUP,
+  MAX_BAND_HEIGHT_FRACTION,
   PAGE_SETUP_CSS_VARS,
+  type BandHeightConfig,
+  type BandNodeConfig,
+  type BandValidationResult,
+  type DedocsBandOptions,
   type DedocsEditorContent,
   type DedocsEditorOptions,
   type PageMargins,
@@ -37,13 +44,26 @@ export {
   DEFAULT_PAPER_SIZE,
   PAPER_SIZES,
   cmToMm,
+  getDefaultBandHeightCm,
+  getDefaultBandHeightCmFor,
+  getMaxBandHeightCm,
+  getMaxBandHeightCmFor,
   getPaperDimensions,
   mmToCm,
   MM_PER_CM,
+  pageHeightMm,
   type Orientation,
   type PaperDimensions,
   type PaperSize,
 } from './utils/paperSizes';
+
+// --- Band validation helpers ---------------------------------------------
+export {
+  clampBandHeight,
+  getBandDefaultCm,
+  getBandMaxCm,
+  validateBandHeight,
+} from './utils/bandValidation';
 
 // --- Engine extensions (Phase 2) ----------------------------------------
 export * from './extensions/dedocsStarterKit';
