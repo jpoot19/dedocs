@@ -33,6 +33,8 @@
   --page-margin-right: 2.54cm;
   --page-margin-bottom: 2.54cm;
   --page-margin-left: 2.54cm;
+  --header-height: 0cm;
+  --footer-height: 0cm;
 }
 
 /**
@@ -182,6 +184,80 @@
 }
 
 /**
+ * Header / footer band containers inside each `.dedocs-page` frame.
+ *
+ * Position is absolute so the band anchors to the page frame corners
+ * regardless of how the body content flows. Heights come from the
+ * `--header-height` / `--footer-height` CSS custom properties emitted
+ * by the `PageSetup` extension; the same vars also drive pagination's
+ * body-area math, so a band height change is reflected in both the
+ * portal targets and the page-break positions.
+ *
+ * Bands ALWAYS reserve space — even when no slot content is supplied.
+ * The reserved area is the top `headerHeight` and bottom `footerHeight`
+ * of the page. Body content lives in the middle and is offset by the
+ * CSS `padding` on the editor surface (the editor's content is
+ * independent of the band portal targets).
+ *
+ * `pointer-events: none` lets the user select body text underneath the
+ * band; band-content wrappers opt back in via `pointer-events: auto` so
+ * slot content remains interactive (e.g. a clickable footer link).
+ *
+ * `overflow: hidden` ensures an over-tall band doesn't bleed past its
+ * reserved area — the CSS layer enforces the spec contract that band
+ * heights are bounded.
+ */
+.dedocs-band-header,
+.dedocs-band-footer {
+  position: absolute;
+  left: var(--page-margin-left);
+  right: var(--page-margin-right);
+  pointer-events: none;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 4px 0;
+}
+
+.dedocs-band-header {
+  top: var(--page-margin-top);
+  height: var(--header-height);
+}
+
+.dedocs-band-footer {
+  bottom: var(--page-margin-bottom);
+  height: var(--footer-height);
+}
+
+/**
+ * Opt the band content (the React portal children) back into pointer
+ * events so links / buttons inside the band remain clickable. Without
+ * this the band wrapper would silently swallow all clicks because the
+ * parent band div is `pointer-events: none`.
+ */
+.dedocs-band-header-content,
+.dedocs-band-footer-content {
+  pointer-events: auto;
+  width: 100%;
+  height: 100%;
+}
+
+/**
+ * Hide the ProseMirror band nodes (`header`, `footer`) inside the
+ * editor DOM. The bands are schema anchors only — the actual visible
+ * content is rendered via React portals into `.dedocs-band-header` /
+ * `.dedocs-band-footer` divs. Display:none keeps the editor body
+ * clean while preserving the band nodes' position in the document
+ * tree (so pagination can still find / skip them).
+ *
+ * Targets the rendered HTML produced by the `header-footer` extension
+ * (`data-node-type="header"` / `data-node-type="footer"`).
+ */
+.dedocs-canvas .ProseMirror.dedocs-editor [data-node-type="header"],
+.dedocs-canvas .ProseMirror.dedocs-editor [data-node-type="footer"] {
+  display: none;
+}
+
+/**
  * Explicit page-break marker rendered inline between paragraphs. The actual
  * node is `<hr data-page-break>`; this class styles that node and its
  * widget decoration.
@@ -238,6 +314,14 @@
     /* Hide the label in print output; keep only the dashed rule. */
     content: none;
   }
+
+  /* Band content renders on screen via React portals; native print
+     rendering is deferred. Hide the band portal targets in print so
+     they don't bleed into the printed output. */
+  .dedocs-band-header,
+  .dedocs-band-footer {
+    display: none;
+  }
 }
 
 /**
@@ -248,9 +332,17 @@
  * `@property` with `inherits: true`. If a target browser refuses to resolve
  * the variables, the `PageSetup` extension emits a literal `@page` rule
  * instead.
+ *
+ * The top / bottom margins include the band heights so the body area in
+ * print starts below the reserved header band and ends above the reserved
+ * footer band. Bands themselves are not printed via `@page` (the spec
+ * defers native print rendering to a future iteration; on-screen portals
+ * remain the source of truth for header / footer content).
  */
 @page {
   size: var(--page-width) var(--page-height);
-  margin: var(--page-margin-top) var(--page-margin-right)
-    var(--page-margin-bottom) var(--page-margin-left);
+  margin-top: calc(var(--page-margin-top) + var(--header-height));
+  margin-right: var(--page-margin-right);
+  margin-bottom: calc(var(--page-margin-bottom) + var(--footer-height));
+  margin-left: var(--page-margin-left);
 }

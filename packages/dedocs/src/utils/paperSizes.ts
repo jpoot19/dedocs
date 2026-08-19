@@ -7,6 +7,13 @@
  * `PageSetupOptions` contract.
  */
 
+import {
+  DEFAULT_BAND_HEIGHT_CM,
+  DEFAULT_BAND_HEIGHT_FRACTION,
+  MAX_BAND_HEIGHT_FRACTION,
+  type PageSetupOptions,
+} from '../types';
+
 export type PaperSize = 'A4' | 'Letter' | 'Legal' | 'A5';
 
 export type Orientation = 'portrait' | 'landscape';
@@ -58,6 +65,62 @@ export function getPaperDimensions(
     return base;
   }
   return { width: base.height, height: base.width };
+}
+
+/**
+ * Effective page height in millimeters for a given `PageSetupOptions`.
+ * Used by band-height helpers to translate page-relative defaults into
+ * absolute cm values.
+ */
+export function pageHeightMm(opts: PageSetupOptions): number {
+  return getPaperDimensions(opts.paperSize, opts.orientation).height;
+}
+
+/**
+ * Default band height in cm, computed as
+ * `(pageHeightMm * DEFAULT_BAND_HEIGHT_FRACTION) / MM_PER_CM`.
+ *
+ * For A4 portrait (297mm) this yields ~5.94cm. Page-relative so the
+ * default scales correctly across A4 / Letter / Legal / A5.
+ */
+export function getDefaultBandHeightCm(pageHeightMm: number): number {
+  return (pageHeightMm * DEFAULT_BAND_HEIGHT_FRACTION) / MM_PER_CM;
+}
+
+/**
+ * Maximum band height in cm for a given page height in millimeters.
+ * Each band is independently clamped to `pageHeightMm * MAX_BAND_HEIGHT_FRACTION`.
+ * With both bands at their maximum the body area is still guaranteed
+ * positive (≥ `pageHeightMm / 3`).
+ */
+export function getMaxBandHeightCm(pageHeightMm: number): number {
+  return (pageHeightMm * MAX_BAND_HEIGHT_FRACTION) / MM_PER_CM;
+}
+
+/**
+ * Convenience overload: derive the default band height from a paper size
+ * and orientation directly, without needing a `PageSetupOptions` object.
+ * Returns `DEFAULT_BAND_HEIGHT_CM` when the page height cannot be
+ * resolved (defensive fallback for callers without a setup context).
+ */
+export function getDefaultBandHeightCmFor(
+  paperSize: PaperSize,
+  orientation: Orientation,
+): number {
+  const dims = getPaperDimensions(paperSize, orientation);
+  return getDefaultBandHeightCm(dims.height);
+}
+
+/**
+ * Convenience overload: derive the maximum band height from a paper size
+ * and orientation directly.
+ */
+export function getMaxBandHeightCmFor(
+  paperSize: PaperSize,
+  orientation: Orientation,
+): number {
+  const dims = getPaperDimensions(paperSize, orientation);
+  return getMaxBandHeightCm(dims.height);
 }
 
 /**

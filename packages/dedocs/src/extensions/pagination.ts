@@ -39,6 +39,7 @@ import {
   type PageSetupOptions,
 } from '../types';
 import { getPaperDimensions } from '../utils/paperSizes';
+import { isBandNode } from './header-footer';
 import { mergePageSetup } from './page-setup';
 
 /**
@@ -84,6 +85,15 @@ export interface PaginationResolvedMetrics {
  * Pure helper: turn a `PageSetupOptions` and a px-per-mm scale into the
  * CSS-pixel metrics used by the pagination algorithm. Exported for unit
  * tests so the math is verifiable without an editor instance.
+ *
+ * The body content area is the page minus:
+ *   - horizontal margins (left + right)
+ *   - vertical margins (top + bottom)
+ *   - combined band heights (header + footer)
+ *
+ * Bands are reserved on every page frame; their combined height is
+ * always subtracted so page-break placement never crosses into the
+ * header/footer areas.
  */
 export function resolveMetrics(
   pageSetup: PageSetupOptions,
@@ -96,11 +106,13 @@ export function resolveMetrics(
     (pageSetup.margins.left + pageSetup.margins.right) * MM_PER_CM * pxPerMm;
   const marginY =
     (pageSetup.margins.top + pageSetup.margins.bottom) * MM_PER_CM * pxPerMm;
+  const bandsY =
+    (pageSetup.headerHeight + pageSetup.footerHeight) * MM_PER_CM * pxPerMm;
   return {
     outerWidth,
     outerHeight,
     contentWidth: Math.max(0, outerWidth - marginX),
-    contentHeight: Math.max(0, outerHeight - marginY),
+    contentHeight: Math.max(0, outerHeight - marginY - bandsY),
   };
 }
 
@@ -117,17 +129,27 @@ interface BlockMeasurement {
 }
 
 /**
- * Collect `(pos, node, dom)` for every direct child of the document.
- * Positions are walked in document order so the caller can iterate
- * top-level blocks without re-querying the DOM.
+ * Collect `(pos, node, dom)` for every direct child of the document,
+ * **excluding** nodes in the `dedocs-band` group. Positions are walked
+ * in document order so the caller can iterate top-level blocks without
+ * re-querying the DOM. Skipped band nodes still advance `pos` so the
+ * offset arithmetic stays correct for downstream call-sites.
+ *
+ * Exported (despite being an internal helper) so that the engine test
+ * suite can assert the band-filter behaviour without spinning up a
+ * full editor.
  */
-function collectTopLevelBlocks(view: EditorView): BlockMeasurement[] {
+export function collectTopLevelBlocks(view: EditorView): BlockMeasurement[] {
   const doc = view.state.doc;
   const children: PMNode[] = [];
   doc.forEach((node) => children.push(node));
   const blocks: BlockMeasurement[] = [];
   let pos = 0;
   for (const node of children) {
+    if (isBandNode(node)) {
+      pos += node.nodeSize;
+      continue;
+    }
     const dom = view.nodeDOM(pos) as HTMLElement | null;
     blocks.push({ pos, size: node.nodeSize, node, dom });
     pos += node.nodeSize;
@@ -538,6 +560,12 @@ export default Pagination;
  * Read the page-setup CSS variables off an element and reconstruct a
  * `Partial<PageSetupOptions>` for the pagination engine. Returns
  * `undefined` when the element is missing or not yet styled.
+ *
+ * Reads all eight CSS vars (`--page-*`, `--page-margin-*`,
+ * `--header-height`, `--footer-height`). Band height vars are
+ * optional in the partial — only set the partial key when the CSS
+ * value can be parsed, so that earlier invocations without the band
+ * vars still work.
  */
 function readPageSetupFromDom(
   el: HTMLElement,
@@ -553,9 +581,17 @@ function readPageSetupFromDom(
     cs.getPropertyValue('--page-margin-bottom'),
   );
   const marginLeftCm = parseCssLengthCm(cs.getPropertyValue('--page-margin-left'));
+  const headerHeightCm = parseCssLengthCm(
+    cs.getPropertyValue('--header-height'),
+  );
+  const footerHeightCm = parseCssLengthCm(
+    cs.getPropertyValue('--footer-height'),
+  );
 
-  // We only re-derive metrics when the CSS vars actually changed; the
-  // memoised key captures all six values.
+  // We only re-derive metrics when the core (page + margin) CSS vars
+  // are present. Band heights are optional — missing band vars
+  // propagate as undefined and `mergePageSetup` fills them with
+  // defaults.
   if (
     widthMm == null ||
     heightMm == null ||
@@ -577,7 +613,7 @@ function readPageSetupFromDom(
   // the screen scale.
   void pxPerMm;
 
-  return {
+  const partial: Partial<PageSetupOptions> = {
     paperSize,
     orientation,
     margins: {
@@ -587,8 +623,16 @@ function readPageSetupFromDom(
       left: marginLeftCm,
     },
   };
+  if (headerHeightCm != null) partial.headerHeight = headerHeightCm;
+  if (footerHeightCm != null) partial.footerHeight = footerHeightCm;
+  return partial;
 }
 
+/**
+ * Build a memoisation key from the page-setup CSS variables on the
+ * editor container. Captures all eight vars so any change to a
+ * band height also forces `resolveMetrics` to recompute.
+ */
 function readCssVarsKey(el: HTMLElement | null | undefined): string {
   if (!el) return '';
   const cs = window.getComputedStyle(el);
@@ -599,6 +643,8 @@ function readCssVarsKey(el: HTMLElement | null | undefined): string {
     cs.getPropertyValue('--page-margin-right'),
     cs.getPropertyValue('--page-margin-bottom'),
     cs.getPropertyValue('--page-margin-left'),
+    cs.getPropertyValue('--header-height'),
+    cs.getPropertyValue('--footer-height'),
   ].join('|');
 }
 

@@ -1,16 +1,27 @@
 schema: spec-driven
 
 context: |
-  dedocs is a TypeScript/React document editor project using Tiptap,
-  tsup, and pnpm workspaces. No dependencies installed yet — empty seed repo.
-  Vitest will be added during initial project setup.
+  dedocs is a TypeScript/React monorepo (pnpm workspaces) for paged
+  document editing built on Tiptap 3. Primary library in packages/dedocs/
+  with Vite playground. tsup 8 builds ESM+CJS. Strict TypeScript (strict: true).
+  Testing: Vitest 2 (unit with happy-dom) + Playwright 1.45 (E2E).
+  No linter/formatter configured.
 
 strict_tdd: false
 
-# Testing capabilities are detected/resolved during setup.
-# Will be populated once Vitest is configured.
-# For now: not available (no package.json exists).
-testing: {}
+testing:
+  runner: vitest 2.0
+  runner_command: pnpm --filter dedocs test
+  coverage: false
+  layers:
+    unit: vitest + @testing-library/react + happy-dom
+    integration: false
+    e2e: "@playwright/test 1.45 (chromium, workspace playground)"
+  e2e_command: pnpm --filter dedocs test:e2e
+  quality:
+    typecheck: pnpm --filter dedocs typecheck
+    linter: false
+    formatter: false
 
 rules:
   proposal:
@@ -27,10 +38,10 @@ rules:
   apply:
     - Follow existing code patterns
     tdd: false
-    test_command: ""
+    test_command: pnpm --filter dedocs test
   verify:
-    test_command: ""
-    build_command: ""
+    test_command: pnpm --filter dedocs test
+    build_command: pnpm --filter dedocs build
     coverage_threshold: 0
   archive:
     - Warn before merging destructive deltas

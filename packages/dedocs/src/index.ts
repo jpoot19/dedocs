@@ -21,8 +21,15 @@
 
 // --- Page setup types and defaults ---------------------------------------
 export {
+  DEFAULT_BAND_HEIGHT_CM,
+  DEFAULT_BAND_HEIGHT_FRACTION,
   DEFAULT_PAGE_SETUP,
+  MAX_BAND_HEIGHT_FRACTION,
   PAGE_SETUP_CSS_VARS,
+  type BandHeightConfig,
+  type BandNodeConfig,
+  type BandValidationResult,
+  type DedocsBandOptions,
   type DedocsEditorContent,
   type DedocsEditorOptions,
   type PageMargins,
@@ -37,13 +44,40 @@ export {
   DEFAULT_PAPER_SIZE,
   PAPER_SIZES,
   cmToMm,
+  getDefaultBandHeightCm,
+  getDefaultBandHeightCmFor,
+  getMaxBandHeightCm,
+  getMaxBandHeightCmFor,
   getPaperDimensions,
   mmToCm,
   MM_PER_CM,
+  pageHeightMm,
   type Orientation,
   type PaperDimensions,
   type PaperSize,
 } from './utils/paperSizes';
+
+// --- Band validation helpers ---------------------------------------------
+// Paper-size-aware variants live in `utils/bandValidation.ts`. The
+// design.md `clampBandHeight(value, pageHeightMm)` /
+// `validateBandHeight(value, pageHeightMm, label)` helpers live in
+// `extensions/page-setup.ts` and are re-exported below under the same
+// public names.
+export {
+  clampBandHeightToMax,
+  getBandDefaultCm,
+  getBandMaxCm,
+  validateBandHeightForPaper,
+} from './utils/bandValidation';
+export {
+  clampBandHeight,
+  validateBandHeight,
+  validateBandOptions,
+  maxBandHeightCmFor,
+  mergePageSetup,
+  applyPageSetupCssVars,
+  resolvePageSetupCssVars,
+} from './extensions/page-setup';
 
 // --- Engine extensions (Phase 2) ----------------------------------------
 export * from './extensions/dedocsStarterKit';
@@ -62,9 +96,13 @@ export {
   DocumentEditorRoot,
   DocumentEditorCanvas,
   DocumentEditorToolbar,
+  DocumentEditorHeader,
+  DocumentEditorFooter,
   type DocumentEditorRootProps,
   type DocumentEditorCanvasProps,
   type DocumentEditorToolbarProps,
+  type DocumentEditorHeaderProps,
+  type DocumentEditorFooterProps,
 } from './components/DocumentEditor';
 export { PaginatedEditor } from './components/PaginatedEditor';
 

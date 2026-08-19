@@ -9,13 +9,21 @@
  *                          `PageSetup` extension holds in its storage).
  *   - `paginationState`  — a read-only snapshot of the pagination plugin's
  *                          current decorations / breaks / page count.
+ *   - `headerSlot`       — React children captured from
+ *                          `<DocumentEditor.Header>` children. Rendered
+ *                          into the header band of every page frame via
+ *                          React portal.
+ *   - `footerSlot`       — React children captured from
+ *                          `<DocumentEditor.Footer>` children. Rendered
+ *                          into the footer band of every page frame via
+ *                          React portal.
  *
  * Consumers should prefer the `useDocumentEditor()` hook over importing
  * `DocumentEditorContext` directly — the hook provides a "must be used
  * inside a Provider" guard.
  */
 
-import { createContext } from 'react';
+import { createContext, type ReactNode } from 'react';
 
 import type { Editor } from '@tiptap/core';
 
@@ -32,6 +40,20 @@ export interface DocumentEditorContextValue {
   pageSetup: PageSetupOptions;
   /** Latest pagination snapshot (breaks, page count, dimensions). */
   paginationState: PaginationState;
+  /**
+   * React children captured from the `<DocumentEditor.Header>` marker
+   * by `Root`. Portaled into the header band of every page frame by
+   * `Canvas`. `null` when no `<DocumentEditor.Header>` child was
+   * supplied.
+   */
+  headerSlot: ReactNode;
+  /**
+   * React children captured from the `<DocumentEditor.Footer>` marker
+   * by `Root`. Portaled into the footer band of every page frame by
+   * `Canvas`. `null` when no `<DocumentEditor.Footer>` child was
+   * supplied.
+   */
+  footerSlot: ReactNode;
 }
 
 export const DocumentEditorContext = createContext<DocumentEditorContextValue | null>(
